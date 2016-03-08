@@ -8,6 +8,12 @@ var session = require('express-session');
 var expressValidatior = require('express-validator');
 var flash = require('connect-flash');
 
+var mongoose = require('mongoose');
+
+//Mongoose Connect
+mongoose.connect('mongodb://localhost/sportsblog');
+var db = mongoose.connection;
+
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
@@ -31,6 +37,29 @@ app.use(session({
   resave: false,
   saveUninitialized: true
 }));
+
+app.use(expressValidatior({
+  errorFormatter: function(param, msg, value) {
+      var namespace = param.split('.')
+      , root        = namespace.shift()
+      , formParam = root;
+
+    while(namespace.length) {
+      formParam += '[' + namespace.shift() + ']';
+    }
+    return {
+      param : formParam,
+      msg   : msg,
+      value : value
+    };
+  }
+}));
+
+app.use(require('connect-flash')());
+app.use(function (req, res, next) {
+  res.locals.messages = require('express-messages')(req, res);
+  next();
+});
 
 app.use('/', routes);
 app.use('/users', users);
